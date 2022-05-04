@@ -1,0 +1,44 @@
+- name: Preparing Host - Create volume group with the assigned device
+  community.general.lvg:
+    vg: vg_data
+    pvs: "{{ device_data }}"
+    state: present
+
+- name: Preparing Host - Create logicals volumes needed
+  community.general.lvol:
+    vg: vg_data
+    lv: "{{ item }}"
+    size: 20G
+    state: present
+    loop:
+      - lv_data
+      - lv_data_db
+      - lv_data_wordpress
+      - lv_data_shared
+      - lv_data_log
+
+- name: Preparing Host - Create XFS filesystems
+  community.general.filesystem:
+    fstype: xfs
+    dev: "/dev/mapper/{{ item }}"
+    state: present
+    loop:
+      - vg_data-lv_data
+      - vg_data-lv_data_db
+      - vg_data-lv_data_wordpress
+      - vg_data-lv_data_shared
+      - vg_data-lv_data_log
+
+- name: Preparing Host - Mount 
+  ansible.posix.mount:
+    path: "{{ item.path }}"
+    fstype: xfs
+    src: "{{ item.device }}"
+    opts: defaults
+    state: present
+    loop:
+      - { path: '/data/', device: '/dev/mapper/vg_data-lv_data' }
+      - { path: '/data/db', device: '/dev/mapper/vg_data-lv_data_db' }
+      - { path: '/data/wordpress', device: '/dev/mapper/vg_data-lv_data_wordpress' }
+      - { path: '/data/shared', device: '/dev/mapper/vg_data-lv_data_shared' }
+      - { path: '/data/log', device: '/dev/mapper/vg_data-lv_data_log' }

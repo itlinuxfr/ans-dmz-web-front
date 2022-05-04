@@ -1,0 +1,8 @@
+- hosts: dmz
+  gather_facts: true
+
+  tasks:
+    - name: Inclure le rôle
+      include_role:
+        name: role-prepare-dmz-hosts-000
+        allow_duplicates: false
